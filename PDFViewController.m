@@ -15,7 +15,6 @@
     size_t _currentPageNum;
     size_t _tmpPageNum;
     CGPDFPageRef _currentPage;
-    dispatch_source_t timer;
 }
 @property (nonatomic,strong) UIPageViewController* pdfReaderViewController;
 @property (nonatomic,assign) BOOL pageViewAnimating;
@@ -297,15 +296,16 @@
 #pragma 打开 PDF 相关
 - (BOOL)openPDFFile:(NSString*)filePath{
     if (_pdfDocument != nil) {
-        CFRelease(_pdfDocument);
+        CGPDFDocumentRelease(_pdfDocument);
         _pdfDocument = nil;
     }
     NSURL* pdfURL = [NSURL fileURLWithPath:filePath];
-    
-    CFURLRef cfpdfURL = CFURLCreateWithFileSystemPath(CFAllocatorGetDefault(), CFStringCreateWithCString(CFAllocatorGetDefault(), pdfURL.path.UTF8String, kCFStringEncodingUTF8), kCFURLPOSIXPathStyle, NO);
+    CFStringRef cfpdfURLStr = CFStringCreateWithCString(CFAllocatorGetDefault(), pdfURL.path.UTF8String, kCFStringEncodingUTF8);
+    CFURLRef cfpdfURL = CFURLCreateWithFileSystemPath(CFAllocatorGetDefault(), cfpdfURLStr, kCFURLPOSIXPathStyle, NO);
     
     _pdfDocument = CGPDFDocumentCreateWithURL(cfpdfURL);
     CFRelease(cfpdfURL);
+    CFRelease(cfpdfURLStr);
     if (_pdfDocument == nil) {
         return NO;
     }
@@ -317,10 +317,10 @@
 
 - (PDFContentViewController* _Nullable)showPage:(size_t)pageNum{
     if (_totalPageNum > 0 && pageNum <= _totalPageNum && pageNum > 0) {
-        if (_currentPage != nil) {
-            //            CFRelease(_currentPage);
-            _currentPage = nil;
-        }
+//        if (_currentPage != nil) {
+//            CGPDFPageRelease(_currentPage);
+//            _currentPage = nil;
+//        }
         _currentPage = CGPDFDocumentGetPage(_pdfDocument, pageNum);
         PDFContentViewController* pdfContentViewController = [[PDFContentViewController alloc]init];
         [pdfContentViewController showPdfPage:_currentPage];
@@ -341,9 +341,13 @@
 
 - (void)dealloc{
     //释放 PDFDocument 的时候,似乎也会释放 PDFPage
+    //确定了,使用CGPDFDocumentRelease释放 PDFDocument 时候,会将最后获取的 PDFPage 一起释放
+    //好奇怪的设计 https://stackoverflow.com/questions/46903182/cgcontextdrawpdfpage-memory-leak-app-crash
     if (_pdfDocument != nil) {
-        //        CFRelease(_pdfDocument);
+        CGPDFDocumentRelease(_pdfDocument);
+        _pdfDocument = nil;
     }
+
 }
 
 - (void)didReceiveMemoryWarning {

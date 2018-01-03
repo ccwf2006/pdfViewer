@@ -67,13 +67,12 @@
 
 - (void)showPdfPage:(CGPDFPageRef)pdfPage{
     if (_pdfPage != nil) {
-        //        CFRelease(_pdfPage);
+        CGPDFPageRelease(_pdfPage);
         _pdfPage = nil;
     }
     if (pdfPage != nil) {
         _pdfPage = pdfPage;
-        //        CFRetain(_pdfPage);
-        
+        CGPDFPageRetain(_pdfPage);
     }
 }
 
@@ -174,7 +173,7 @@
 #pragma CALayerDelegate
 - (void)drawLayer:(CALayer *)layer inContext:(CGContextRef)context{
         PDFContentViewController* strongSelf = self;
-        //    CGPDFPageRetain(_pdfPage);
+        CGPDFPageRetain(_pdfPage);
         double screenScale = [UIScreen mainScreen].scale;
         CGSize pdfPageOriginalPageSize = CGPDFPageGetBoxRect(strongSelf->_pdfPage, PDFContentDefaultPDFBox).size;
         CGSize imageSize = CGSizeMake(layer.bounds.size.width, layer.bounds.size.height);
@@ -189,7 +188,7 @@
         //    CGContextScaleCTM(context, 1/screenScale, 1/screenScale);
         CGContextDrawPDFPage(context, strongSelf->_pdfPage);
         CGContextRestoreGState(context);
-        //    CGPDFPageRelease(_pdfPage);
+        CGPDFPageRelease(_pdfPage);
 }
 
 - (void)drawThumb{
@@ -222,7 +221,7 @@
     self.pdfContentLayer.contents = nil;
     self.pdfContentView.layer.contents = nil;
     if (_pdfPage != nil) {
-        //        CFRelease(_pdfPage);
+        CGPDFPageRelease(_pdfPage);
         _pdfPage = nil;
     }
 }
